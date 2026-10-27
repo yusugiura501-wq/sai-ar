@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>早稲田祭サイ AR</title>
+<meta property="og:title" content="早稲田祭サイ AR">
+<meta property="og:description" content="スマホで開くと、はっぴ姿のサイがARで目の前に現れます">
+<script>
+// Open AR immediately: iPhone/iPad -> Quick Look (USDZ), Android -> Scene Viewer (GLB).
+(function () {
+  if (location.hash === '#3d') return;
+  var base = new URL('.', location.href);
+  var glb = new URL('waseda_sai.glb', base).href;
+  var usdz = new URL('waseda_sai.usdz', base).href;
+  var ua = navigator.userAgent;
+  var isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var isAndroid = /Android/.test(ua);
+  if (isIOS) {
+    window.__arTarget = usdz;
+    location.replace(usdz);
+  } else if (isAndroid) {
+    var intent = 'intent://arvr.google.com/scene-viewer/1.0?file=' + encodeURIComponent(glb) +
+      '&mode=ar_preferred&title=' + encodeURIComponent('早稲田祭サイ') +
+      '#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;' +
+      'S.browser_fallback_url=' + encodeURIComponent(base.href + '#3d') + ';end;';
+    window.__arTarget = intent;
+    location.replace(intent);
+  }
+})();
+</script>
+<style>
+  html,body{margin:0;height:100%;background:#d9eef7;color:#18303d;font-family:"Hiragino Sans","Yu Gothic",system-ui,sans-serif}
+  #tap{display:none;position:fixed;inset:0;border:0;background:#b8261c;color:#fff;font:inherit;font-size:22px;font-weight:700;cursor:pointer}
+  #tap.show{display:block}
+  model-viewer{width:100%;height:100%;background:transparent}
+  #hint{position:fixed;left:0;right:0;bottom:calc(14px + env(safe-area-inset-bottom,0px));text-align:center;font-size:13px;opacity:.7}
+</style>
+</head>
+<body>
+<!-- Shown only if the phone blocked the automatic jump (e.g. some Android browsers need one tap) -->
+<button id="tap" type="button">タップしてARで見る</button>
+
+<script>
+(function () {
+  var target = window.__arTarget;
+  if (target) {
+    // Still on this page after a moment = automatic jump was blocked; offer one tap.
+    setTimeout(function () {
+      if (document.visibilityState === 'visible') {
+        var b = document.getElementById('tap');
+        b.classList.add('show');
+        b.onclick = function () { location.href = target; };
+      }
+    }, 1500);
+    return;
+  }
+  // PC or AR-unavailable fallback: full-screen 3D viewer, no extra UI
+  var s = document.createElement('script');
+  s.type = 'module';
+  s.src = 'https://cdn.jsdelivr.net/npm/@google/model-viewer@4.1.0/dist/model-viewer.min.js';
+  document.head.appendChild(s);
+  document.body.insertAdjacentHTML('beforeend',
+    '<model-viewer src="waseda_sai.glb" ios-src="waseda_sai.usdz" ar ar-modes="webxr scene-viewer quick-look" ' +
+    'camera-controls autoplay shadow-intensity="1" camera-orbit="20deg 82deg auto" ' +
+    'alt="はっぴを着た早稲田祭のサイが手を振ってウインクする3Dモデル"></model-viewer>' +
+    '<div id="hint">スマホで開くとARで表示されます</div>');
+})();
+</script>
+</body>
+</html>
